@@ -10,6 +10,21 @@ class TCPserver():
         self.UDPsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.UDPsock.bind(('0.0.0.0', port))
         self.connections = {}  # 保存所有客户端连接状态
+#connections结构：
+# self.connections = {
+#     ('192.168.1.100', 54321): {
+#         'state': 'ESTABLISHED',
+#         'expectseq': 100,
+#         'syn_ack_seq': 500,
+#
+#     },
+#     ('10.0.0.2', 12345): {
+#         'state': 'SYN_RCVD',
+#         'expectseq': 150,
+#         'syn_ack_seq': 50,
+#
+#     }
+# }
         print(f"服务器端已启动，监听端口 {port}")
 
     def header(self, seq, ack, flags, len):
@@ -18,7 +33,7 @@ class TCPserver():
     def checkheader(self, header):
         return struct.unpack('!IIHH', header)
 
-    def handlepacket(self, data, addr):
+    def handlepacket(self, data, addr):#检查数据包类型和状态
         #检查数据包长度是否足够
         if len(data) < 12:
             print(f"来自 {addr} 的数据包长度不足（{len(data)}字节），忽略")
@@ -31,7 +46,7 @@ class TCPserver():
                 'expectseq': 0,
                 'syn_ack_seq': None,
                 'recvtime': time.time()
-            }
+            }#State就是状态，expectseq是期望收到的第一个字节；syn_ack_seq是用于检查连接状态是否建立的；
         conn = self.connections[addr]
         conn['recvtime'] = time.time()  #更新最后活动时间
 
@@ -66,7 +81,7 @@ class TCPserver():
         self.UDPsock.sendto(ackheader, addr)
         print(f"向 {addr} 发送SYN-ACK, seq={syn_ack_seq}, ack={seq + 1}")
 
-    def handleack(self, conn, seq, ack, addr):
+    def handleack(self, conn, seq, ack, addr):#处理连接时的ACK包
 
         if conn['state'] == 'SYNRECVED' and ack == conn['syn_ack_seq'] + 1:
             print(f"与 {addr} 的连接已建立")
@@ -82,9 +97,9 @@ class TCPserver():
             return
 
         if seq == conn['expectseq']:
-            if random.random() > 0.2:  # 模拟丢包
+            if random.random() > 0.2:  # 模拟丢包，0.8的概率成功接收
                 conn['expectseq'] += length
-                ack_packet = self.header(0, conn['expectseq'], 2, 0)
+                ack_packet = self.header(0, conn['expectseq'], 2, 0)#这里也是回复ack，但是是针对数据包的
                 self.UDPsock.sendto(ack_packet, addr)
                 print(f"已确认 {addr} 的数据包 {seq} ~ {seq + length - 1}")
             else:
@@ -104,7 +119,7 @@ class TCPserver():
         fin_seq = random.randint(1000, 9999)
         fin_pkt = self.header(fin_seq, 0, 5, 0)
         self.UDPsock.sendto(fin_pkt, addr)
-        conn['state'] = 'FIN_WAIT_1'
+        #conn['state'] = 'FIN_WAIT_1'
         print(f"向 {addr} 发送FIN, seq={fin_seq}")
 
         # 更新连接状态
@@ -114,7 +129,7 @@ class TCPserver():
         print("服务器端已启动")
         while True:
             try:
-                data, addr = self.UDPsock.recvfrom(92)
+                data, addr = self.UDPsock.recvfrom(92)#数据包最多92字节
                 threading.Thread(target=self.handlepacket, args=(data, addr), daemon=True).start()#daemon=True：设为守护线程（主线程退出时自动终止
             except Exception as e:
                 print(f"服务器错误: {e}")
