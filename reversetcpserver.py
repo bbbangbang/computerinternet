@@ -90,7 +90,7 @@ def Initialization(connection,addr):
 def client_message(addr,connection):
     print(f"{addr}建立连接")
     try:
-        Initialization(connection,addr)
+        Initialization(connection,addr)#尝试去处理Initialization包
     except Exception as e:
         print(f"{addr}发生错误{e}")
     finally:

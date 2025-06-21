@@ -20,7 +20,7 @@ def reverseRequest(clientsocket  , pieces):
             print(f"收到的第{count}个包类型错误，应为4")
             return
 
-        data_bytes = b''
+        data_bytes = b''#这里一定要加b，因为是二进制文件数据
         part = clientsocket.recv(length)
         data_bytes += part
 
@@ -29,7 +29,7 @@ def reverseRequest(clientsocket  , pieces):
 
         count += 1
 
-        reversefile.insert(0,data_str)
+        reversefile.insert(0,data_str)#从开始处插入（相当于翻转拼接，只是为了方便查看）
 
     outputtext = ''.join(reversefile)
 
@@ -39,7 +39,7 @@ def reverseRequest(clientsocket  , pieces):
 
 def Initilization(clientsocket , N):
     pack = struct.pack('!HI',1,N)#H	unsigned short	2	0 ~ 65,535#I	unsigned int	4	0 ~ 4,294,967,295
-    clientsocket.sendall(pack)
+    clientsocket.sendall(pack)#全部发送
 
     agreeheader = clientsocket.recv(2)
     (agreetype,) = struct.unpack('!H',agreeheader)
